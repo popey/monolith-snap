@@ -16,6 +16,7 @@ description: |
   all assets as data URLs and therefore displays the saved page
   exactly the same, being completely separated from the Internet.
 
+grade: stable
 confinement: strict
 
 architectures:
