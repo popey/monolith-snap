@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 import threading
 from urllib.parse import unquote_to_bytes
+from xml.etree import ElementTree
 
 artifacts = Path('artifacts')
 artifacts.mkdir(exist_ok=True)
@@ -46,12 +47,19 @@ try:
         result = subprocess.run(['snap', 'run', 'monolith', f'http://127.0.0.1:{server.server_port}/index.html', '-o', str(output)], capture_output=True, text=True, timeout=60, check=True)
         (artifacts / 'archive.log').write_text(result.stdout + result.stderr)
         document = output.read_text()
+        (artifacts / 'archive.html').write_text(document)
         assert 'Snapstead archive fixture' in document
         embedded = {}
         for metadata, payload in re.findall(r'data:([^,"\s]*),([^"\s]*)', html.unescape(document)):
             mime = metadata.split(';')[0]
             embedded[mime] = base64.b64decode(payload) if ';base64' in metadata else unquote_to_bytes(payload)
-        assert embedded.get('image/svg+xml') == assets['/image.svg'][1], 'Image was not embedded'
+        assert 'image/svg+xml' in embedded, ('Image was not embedded', list(embedded))
+        # Monolith normalizes SVG serialization; require the same image content.
+        svg = ElementTree.fromstring(embedded['image/svg+xml'])
+        assert svg.tag == '{http://www.w3.org/2000/svg}svg'
+        assert svg.attrib['width'] == '8' and svg.attrib['height'] == '8'
+        rect = svg.find('{http://www.w3.org/2000/svg}rect')
+        assert rect is not None and rect.attrib == {'width': '8', 'height': '8', 'fill': 'red'}
         assert b'#123456' in embedded.get('text/css', b''), 'Stylesheet was not embedded'
         assert set(assets) <= requests, requests
 finally:
