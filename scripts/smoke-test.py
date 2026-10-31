@@ -2,7 +2,7 @@
 """Exercise only a test-owned loopback page and its CSS/image assets."""
 import base64
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-import html
+from html.parser import HTMLParser
 from pathlib import Path
 import re
 import subprocess
@@ -50,7 +50,16 @@ try:
         (artifacts / 'archive.html').write_text(document)
         assert 'Snapstead archive fixture' in document
         embedded = {}
-        for metadata, payload in re.findall(r'data:([^,"\s]*),([^"\s]*)', html.unescape(document)):
+        # Decode HTML entities only after parsing attribute boundaries: an SVG
+        # data URL can contain escaped quotes and literal whitespace.
+        class DataURLs(HTMLParser):
+            urls = []
+            def handle_starttag(self, tag, attrs):
+                self.urls.extend(value for name, value in attrs if value and value.startswith('data:'))
+        parser = DataURLs()
+        parser.feed(document)
+        for url in parser.urls:
+            metadata, payload = url[5:].split(',', 1)
             mime = metadata.split(';')[0]
             embedded[mime] = base64.b64decode(payload) if ';base64' in metadata else unquote_to_bytes(payload)
         assert 'image/svg+xml' in embedded, ('Image was not embedded', list(embedded))
