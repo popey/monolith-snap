@@ -1,6 +1,6 @@
 name: monolith
 base: core22
-version: 'v2.11.7'
+version: 'v2.12.0'
 summary: Monolith - Save HTML pages with ease 
 description: |
   A data hoarder's dream come true: bundle any web page into a single
@@ -31,7 +31,7 @@ parts:
     plugin: rust
     source: https://github.com/Y2Z/monolith
     source-type: git
-    source-tag: v2.11.7
+    source-tag: v2.12.0
     build-packages:
       - libssl-dev
       - pkg-config

@@ -16,7 +16,7 @@ artifacts.mkdir(exist_ok=True)
 expected = re.search(r"(?m)^version: 'v?([^']+)'$", Path('snap/snapcraft.yaml').read_text()).group(1)
 version = subprocess.run(['snap', 'run', 'monolith', '--version'], capture_output=True, text=True, timeout=30, check=True)
 (artifacts / 'version.log').write_text(version.stdout)
-assert re.search(r'(?<![0-9.])' + re.escape(expected) + r'(?![0-9.])', version.stdout), version.stdout
+assert version.stdout.strip() == f'monolith {expected}', version.stdout
 assets = {
     '/index.html': ('text/html', b'<html><head><link rel="stylesheet" href="/style.css"></head><body><h1>Snapstead archive fixture</h1><img src="/image.svg"></body></html>'),
     '/style.css': ('text/css', b'h1 { color: #123456; }'),
