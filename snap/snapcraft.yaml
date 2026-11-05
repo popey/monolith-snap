@@ -1,7 +1,6 @@
 name: monolith
 base: core22
-# Version data defined inside the monolith part below
-adopt-info: monolith
+version: 'v2.12.0'
 summary: Monolith - Save HTML pages with ease 
 description: |
   A data hoarder's dream come true: bundle any web page into a single
@@ -32,24 +31,10 @@ parts:
     plugin: rust
     source: https://github.com/Y2Z/monolith
     source-type: git
+    source-tag: v2.12.0
     build-packages:
       - libssl-dev
       - pkg-config
-    override-pull: |
-      craftctl default
-      # Determine the current tag
-      last_committed_tag="$(git describe --tags --abbrev=0)"
-      last_committed_tag_ver="$(echo ${last_committed_tag})"
-      # Determine the most recent version in the beta channel in the Snap Store
-      last_released_tag="$(snap info $SNAPCRAFT_PROJECT_NAME | awk '$1 == "beta:" { print $2 }')"
-      # If the latest tag from the upstream project has not been released to
-      # beta, build that tag instead of master.
-      if [ "${last_committed_tag_ver}" != "${last_released_tag}" ]; then
-        git fetch
-        git checkout "${last_committed_tag}"
-      fi
-      # set version number of the snap based on what we did above
-      craftctl set version=$(git describe --tags --abbrev=0)
 
 apps:
   monolith:
