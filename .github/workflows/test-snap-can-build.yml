@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -26,15 +27,29 @@ jobs:
           exit 1
 
       - name: Review snap
+        timeout-minutes: 10
         uses: diddlesnaps/snapcraft-review-action@v1
         with:
           snap: ${{ steps.snapcraft.outputs.snap }}
           isClassic: 'false'
 
       - name: Install and exercise archive creation
+        timeout-minutes: 10
         run: |
           sudo snap install --dangerous "${{ steps.snapcraft.outputs.snap }}"
           python3 scripts/smoke-test.py
+
+      - name: Capture snapd diagnostics on failure
+        if: failure() || cancelled()
+        timeout-minutes: 2
+        run: |
+          mkdir -p artifacts
+          sudo snap changes > artifacts/snap-changes.log 2>&1 || true
+          cat artifacts/snap-changes.log
+          for change in $(awk '$2 == "Doing" || $2 == "Error" { print $1 }' artifacts/snap-changes.log); do
+            sudo snap tasks "$change" > "artifacts/snap-tasks-$change.log" 2>&1 || true
+            cat "artifacts/snap-tasks-$change.log"
+          done
 
       - name: Upload artifacts
         if: always()
